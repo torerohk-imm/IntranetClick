@@ -1,0 +1,9 @@
+.env
+storage/uploads/announcements/*
+!storage/uploads/announcements/.gitkeep
+storage/uploads/documents/*
+!storage/uploads/documents/.gitkeep
+storage/uploads/avatars/*
+!storage/uploads/avatars/.gitkeep
+storage/uploads/branding/*
+!storage/uploads/branding/.gitkeep
