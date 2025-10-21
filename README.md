@@ -1,0 +1,2 @@
+# IntranetClick
+Intranet Click Seguros
