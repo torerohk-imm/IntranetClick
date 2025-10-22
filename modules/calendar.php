@@ -41,7 +41,59 @@ if ($canManage && isset($_GET['action'], $_GET['id']) && verify_csrf($_GET['toke
     }
 }
 
-$events = $conn->query('SELECT * FROM events ORDER BY date ASC')->fetchAll();
+$monthParam = $_GET['month'] ?? date('Y-m');
+if (!preg_match('/^\d{4}-\d{2}$/', $monthParam)) {
+    $monthParam = date('Y-m');
+}
+
+$monthDate = DateTime::createFromFormat('Y-m', $monthParam) ?: new DateTime('first day of this month');
+$monthDate->setDate((int)$monthDate->format('Y'), (int)$monthDate->format('m'), 1);
+$monthKey = $monthDate->format('Y-m');
+
+$monthNames = [
+    1 => 'enero',
+    2 => 'febrero',
+    3 => 'marzo',
+    4 => 'abril',
+    5 => 'mayo',
+    6 => 'junio',
+    7 => 'julio',
+    8 => 'agosto',
+    9 => 'septiembre',
+    10 => 'octubre',
+    11 => 'noviembre',
+    12 => 'diciembre',
+];
+
+$monthLabel = $monthNames[(int)$monthDate->format('n')] . ' ' . $monthDate->format('Y');
+
+$prevMonth = (clone $monthDate)->modify('-1 month')->format('Y-m');
+$nextMonth = (clone $monthDate)->modify('+1 month')->format('Y-m');
+
+$startOfGrid = clone $monthDate;
+$dayOfWeek = (int)$startOfGrid->format('N');
+$startOfGrid->modify('-' . ($dayOfWeek - 1) . ' days');
+$endOfGrid = clone $startOfGrid;
+$endOfGrid->modify('+41 days');
+
+$stmt = $conn->prepare('SELECT id, title, date, description FROM events WHERE date BETWEEN :start AND :end ORDER BY date ASC');
+$stmt->execute([
+    'start' => $startOfGrid->format('Y-m-d'),
+    'end' => $endOfGrid->format('Y-m-d'),
+]);
+$calendarEvents = $stmt->fetchAll();
+
+$eventsByDate = [];
+foreach ($calendarEvents as $eventRow) {
+    $eventsByDate[$eventRow['date']][] = $eventRow;
+}
+
+$monthlyEvents = array_values(array_filter($calendarEvents, function ($row) use ($monthKey) {
+    return substr($row['date'], 0, 7) === $monthKey;
+}));
+
+$weekdays = ['LUNES', 'MARTES', 'MIÉRCOLES', 'JUEVES', 'VIERNES', 'SÁBADO', 'DOMINGO'];
+$today = date('Y-m-d');
 ?>
 <div class="row g-4">
     <div class="col-12 col-xl-4">
@@ -73,7 +125,7 @@ $events = $conn->query('SELECT * FROM events ORDER BY date ASC')->fetchAll();
                     </div>
                     <div class="d-flex justify-content-between">
                         <?php if (isset($editing)): ?>
-                            <a class="btn btn-outline-secondary" href="?module=calendar">Cancelar</a>
+                            <a class="btn btn-outline-secondary" href="?module=calendar&month=<?php echo urlencode($monthKey); ?>">Cancelar</a>
                         <?php endif; ?>
                         <button class="btn btn-primary btn-neumorphic" type="submit"><?php echo isset($editing) ? 'Actualizar' : 'Crear'; ?></button>
                     </div>
@@ -84,41 +136,68 @@ $events = $conn->query('SELECT * FROM events ORDER BY date ASC')->fetchAll();
         </div>
     </div>
     <div class="col-12 col-xl-8">
-        <div class="module-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0">Listado de eventos</h5>
-            </div>
-            <div class="table-responsive table-neumorphic">
-                <table class="table align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Título</th>
-                            <th>Descripción</th>
-                            <?php if ($canManage): ?><th class="text-end">Acciones</th><?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($events as $event): ?>
-                            <tr>
-                                <td><?php echo format_date($event['date']); ?></td>
-                                <td><?php echo htmlspecialchars($event['title']); ?></td>
-                                <td><?php echo htmlspecialchars($event['description']); ?></td>
-                                <?php if ($canManage): ?>
-                                <td class="text-end">
-                                    <a href="?module=calendar&action=edit&id=<?php echo $event['id']; ?>&token=<?php echo csrf_token(); ?>" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <a href="?module=calendar&action=delete&id=<?php echo $event['id']; ?>&token=<?php echo csrf_token(); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Deseas eliminar este evento?');">Eliminar</a>
-                                </td>
-                                <?php endif; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                        <?php if (empty($events)): ?>
-                            <tr>
-                                <td colspan="4" class="text-center text-muted py-4">No hay eventos registrados.</td>
-                            </tr>
+        <div class="module-card calendar-shell">
+            <div class="calendar-surface">
+                <div class="calendar-header">
+                    <a class="calendar-nav-btn" href="?module=calendar&month=<?php echo urlencode($prevMonth); ?>" aria-label="Mes anterior">&lsaquo;</a>
+                    <div>
+                        <span class="calendar-month"><?php echo htmlspecialchars($monthLabel); ?></span>
+                    </div>
+                    <a class="calendar-nav-btn" href="?module=calendar&month=<?php echo urlencode($nextMonth); ?>" aria-label="Mes siguiente">&rsaquo;</a>
+                </div>
+                <div class="calendar-weekdays">
+                    <?php foreach ($weekdays as $dayLabel): ?>
+                        <span><?php echo $dayLabel; ?></span>
+                    <?php endforeach; ?>
+                </div>
+                <div class="calendar-grid">
+                    <?php
+                    $cursor = clone $startOfGrid;
+                    for ($i = 0; $i < 42; $i++):
+                        $dateKey = $cursor->format('Y-m-d');
+                        $classes = [];
+                        if ($cursor->format('Y-m') !== $monthKey) {
+                            $classes[] = 'muted';
+                        }
+                        if ($dateKey === $today) {
+                            $classes[] = 'today';
+                        }
+                    ?>
+                    <div class="calendar-day <?php echo implode(' ', $classes); ?>">
+                        <span class="calendar-day-number"><?php echo $cursor->format('j'); ?></span>
+                        <?php if (!empty($eventsByDate[$dateKey])): ?>
+                            <?php foreach ($eventsByDate[$dateKey] as $eventItem): ?>
+                                <span class="calendar-event" title="<?php echo htmlspecialchars($eventItem['description']); ?>"><?php echo htmlspecialchars($eventItem['title']); ?></span>
+                            <?php endforeach; ?>
                         <?php endif; ?>
-                    </tbody>
-                </table>
+                    </div>
+                    <?php
+                        $cursor->modify('+1 day');
+                    endfor;
+                    ?>
+                </div>
+                <div class="calendar-events-list">
+                    <h6 class="text-uppercase small fw-semibold text-danger mb-3">Eventos del mes</h6>
+                    <ul class="list-unstyled mb-0">
+                        <?php foreach ($monthlyEvents as $event): ?>
+                            <li class="calendar-events-item">
+                                <div>
+                                    <span class="calendar-events-date"><?php echo format_date($event['date']); ?></span>
+                                    <span class="calendar-events-title"><?php echo htmlspecialchars($event['title']); ?></span>
+                                </div>
+                                <?php if ($canManage): ?>
+                                <div class="calendar-event-actions">
+                                    <a href="?module=calendar&action=edit&id=<?php echo $event['id']; ?>&token=<?php echo htmlspecialchars(csrf_token()); ?>&month=<?php echo urlencode($monthKey); ?>" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="?module=calendar&action=delete&id=<?php echo $event['id']; ?>&token=<?php echo htmlspecialchars(csrf_token()); ?>&month=<?php echo urlencode($monthKey); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Deseas eliminar este evento?');">Eliminar</a>
+                                </div>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                        <?php if (empty($monthlyEvents)): ?>
+                            <li class="text-muted">Este mes no tiene eventos registrados.</li>
+                        <?php endif; ?>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

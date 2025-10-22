@@ -4,7 +4,7 @@ use App\Auth;
 
 $conn = Database::connection();
 $canManage = Auth::canManageContent();
-$uploadDir = realpath(__DIR__ . '/../storage/uploads/avatars');
+$uploadDir = upload_dir('avatars');
 
 if ($canManage && is_post()) {
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
@@ -35,7 +35,7 @@ if ($canManage && is_post()) {
                 $filename = uniqid('avatar_') . '.' . $allowed[$type];
                 $destination = $uploadDir . DIRECTORY_SEPARATOR . $filename;
                 if (move_uploaded_file($_FILES['photo']['tmp_name'], $destination)) {
-                    $photo = 'storage/uploads/avatars/' . $filename;
+                    $photo = 'uploads/avatars/' . $filename;
                 }
             }
         }
@@ -50,6 +50,11 @@ if ($canManage && is_post()) {
 }
 
 if ($canManage && isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'delete_member' && verify_csrf($_GET['token'] ?? '')) {
+    $stmt = $conn->prepare('SELECT photo_path FROM org_members WHERE id = :id');
+    $stmt->execute(['id' => $_GET['id']]);
+    if ($row = $stmt->fetch()) {
+        delete_public_file($row['photo_path']);
+    }
     $stmt = $conn->prepare('DELETE FROM org_members WHERE id = :id');
     $stmt->execute(['id' => $_GET['id']]);
     $message = 'Colaborador eliminado.';
@@ -74,7 +79,7 @@ function renderTree($membersByManager, $managerId = 'root', $membersLookup = [])
         echo '<div>'; 
         echo '<div class="organigram-node">';
         if (!empty($member['photo_path'])) {
-            echo '<img src="../' . htmlspecialchars($member['photo_path']) . '" class="organigram-photo" alt="Foto">';
+            echo '<img src="' . htmlspecialchars(base_url($member['photo_path'])) . '" class="organigram-photo" alt="Foto">';
         }
         echo '<h6 class="mb-1">' . htmlspecialchars($member['name']) . '</h6>';
         echo '<p class="mb-1 text-muted">' . htmlspecialchars($member['job_title']) . '</p>';
@@ -174,7 +179,7 @@ $topMembers = $membersByManager['root'] ?? [];
                         <div class="text-center">
                             <div class="organigram-node">
                                 <?php if (!empty($rootMember['photo_path'])): ?>
-                                    <img src="../<?php echo htmlspecialchars($rootMember['photo_path']); ?>" class="organigram-photo" alt="Foto">
+                                    <img src="<?php echo htmlspecialchars(base_url($rootMember['photo_path'])); ?>" class="organigram-photo" alt="Foto">
                                 <?php endif; ?>
                                 <h5 class="mb-1"><?php echo htmlspecialchars($rootMember['name']); ?></h5>
                                 <p class="text-muted mb-1"><?php echo htmlspecialchars($rootMember['job_title']); ?></p>

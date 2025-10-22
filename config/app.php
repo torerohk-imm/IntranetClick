@@ -8,6 +8,7 @@ return [
         'background' => '#f1f5f9',
         'card' => '#ffffff',
     ],
-    'upload_path' => __DIR__ . '/../storage/uploads',
+    'upload_path' => __DIR__ . '/../public/uploads',
+    'upload_url' => '/uploads',
     'base_url' => '',
 ];

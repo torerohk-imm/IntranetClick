@@ -67,6 +67,69 @@ function base_url(string $path = ''): string
     return rtrim($config['base_url'], '/') . '/' . ltrim($path, '/');
 }
 
+function public_path(string $path = ''): string
+{
+    static $publicDir = null;
+    if ($publicDir === null) {
+        $publicDir = realpath(__DIR__ . '/../public');
+    }
+
+    if ($publicDir === false) {
+        throw new RuntimeException('No se encontró el directorio público.');
+    }
+
+    if ($path === '') {
+        return $publicDir;
+    }
+
+    $normalized = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, ltrim($path, '/\\'));
+    return $publicDir . DIRECTORY_SEPARATOR . $normalized;
+}
+
+function upload_dir(string $subdir = ''): string
+{
+    $config = app_settings();
+    $base = rtrim($config['upload_path'], DIRECTORY_SEPARATOR);
+
+    if (!is_dir($base)) {
+        mkdir($base, 0775, true);
+    }
+
+    if ($subdir === '') {
+        return $base;
+    }
+
+    $path = $base . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, trim($subdir, '/\\'));
+    if (!is_dir($path)) {
+        mkdir($path, 0775, true);
+    }
+
+    return $path;
+}
+
+function upload_url(string $path = ''): string
+{
+    $config = app_settings();
+    $base = rtrim($config['upload_url'] ?? '/uploads', '/');
+    if ($path === '') {
+        return $base;
+    }
+
+    return $base . '/' . ltrim($path, '/');
+}
+
+function delete_public_file(?string $relativePath): void
+{
+    if (empty($relativePath)) {
+        return;
+    }
+
+    $filePath = public_path($relativePath);
+    if (is_file($filePath)) {
+        unlink($filePath);
+    }
+}
+
 function is_post(): bool
 {
     return $_SERVER['REQUEST_METHOD'] === 'POST';
@@ -117,4 +180,61 @@ function format_datetime(string $datetime): string
 function format_date(string $date): string
 {
     return date('d/m/Y', strtotime($date));
+}
+
+function dashboard_default_settings(): array
+{
+    return [
+        'layout' => 'grid',
+        'visible_modules' => ['calendar', 'announcements', 'documents', 'quick-links'],
+    ];
+}
+
+function get_user_dashboard_settings(int $userId): array
+{
+    $defaults = dashboard_default_settings();
+    $stmt = Database::connection()->prepare('SELECT settings FROM user_customizations WHERE user_id = :user_id');
+    $stmt->execute(['user_id' => $userId]);
+    $row = $stmt->fetch();
+
+    if (!$row) {
+        return $defaults;
+    }
+
+    $settings = json_decode($row['settings'], true);
+    if (!is_array($settings)) {
+        return $defaults;
+    }
+
+    $layout = in_array($settings['layout'] ?? '', ['grid', 'list'], true) ? $settings['layout'] : $defaults['layout'];
+    $visible = array_values(array_intersect($settings['visible_modules'] ?? [], $defaults['visible_modules']));
+    if (empty($visible)) {
+        $visible = $defaults['visible_modules'];
+    }
+
+    return [
+        'layout' => $layout,
+        'visible_modules' => $visible,
+    ];
+}
+
+function save_user_dashboard_settings(int $userId, array $settings): array
+{
+    $defaults = dashboard_default_settings();
+    $normalized = [
+        'layout' => in_array($settings['layout'] ?? '', ['grid', 'list'], true) ? $settings['layout'] : $defaults['layout'],
+        'visible_modules' => array_values(array_intersect($settings['visible_modules'] ?? [], $defaults['visible_modules'])),
+    ];
+
+    if (empty($normalized['visible_modules'])) {
+        $normalized['visible_modules'] = $defaults['visible_modules'];
+    }
+
+    $stmt = Database::connection()->prepare('INSERT INTO user_customizations (user_id, settings) VALUES (:user_id, :settings) ON DUPLICATE KEY UPDATE settings = VALUES(settings)');
+    $stmt->execute([
+        'user_id' => $userId,
+        'settings' => json_encode($normalized, JSON_UNESCAPED_UNICODE),
+    ]);
+
+    return $normalized;
 }

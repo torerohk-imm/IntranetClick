@@ -65,7 +65,7 @@ Intranet Corporativa modular desarrollada con PHP nativo siguiendo una arquitect
 4. **Configurar Apache**
 
    - Apunta el DocumentRoot a la carpeta `public/`.
-   - Asegúrate de que PHP tenga permisos de escritura sobre `storage/uploads/`.
+  - Asegúrate de que PHP tenga permisos de escritura sobre `public/uploads/`.
 
    Ejemplo de VirtualHost:
    ```apache
@@ -92,20 +92,20 @@ app/                Clases de soporte (Auth, Database) y helpers globales
 config/             Configuración base de la aplicación y base de datos
 modules/            Módulos funcionales cargados dinámicamente
 public/             Punto de entrada web, activos y vistas públicas
-storage/uploads/    Almacenamiento de documentos, anuncios, branding y avatares
+public/uploads/     Almacenamiento público de documentos, anuncios, branding y avatares
 vendor/             Autoload PSR-4 ligero (sin Composer obligatorio)
 ```
 
 ## Personalización
 
 - **Colores y logotipo**: disponibles en el módulo Administración → Personalización.
-- **Dashboard**: cada usuario puede definir el layout y módulos visibles desde el propio panel.
+- **Dashboard**: cada usuario puede definir el layout y módulos visibles desde el menú de perfil → "Personalizar dashboard".
 - **Permisos del repositorio**: las carpetas admiten roles y usuarios específicos (por correo).
 
 ## Scripts y utilidades
 
 - `database.sql`: crea toda la estructura y datos iniciales.
-- `storage/uploads/`: incluye subcarpetas con `.gitkeep` para mantener el árbol y debe ser escribible.
+- `public/uploads/`: incluye subcarpetas con `.gitkeep` para mantener el árbol y debe ser escribible.
 
 ## Seguridad
 

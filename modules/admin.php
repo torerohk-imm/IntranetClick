@@ -70,9 +70,9 @@ if (is_post()) {
             $type = mime_content_type($_FILES['site_logo']['tmp_name']);
             if (isset($allowed[$type])) {
                 $filename = uniqid('logo_') . '.' . $allowed[$type];
-                $destination = realpath(__DIR__ . '/../storage/uploads/branding') . DIRECTORY_SEPARATOR . $filename;
+                $destination = upload_dir('branding') . DIRECTORY_SEPARATOR . $filename;
                 if (move_uploaded_file($_FILES['site_logo']['tmp_name'], $destination)) {
-                    $logoPath = 'storage/uploads/branding/' . $filename;
+                    $logoPath = 'uploads/branding/' . $filename;
                 }
             }
         }
@@ -230,9 +230,9 @@ $settings = [
                 <div class="col-12">
                     <label class="form-label">Logotipo</label>
                     <input type="file" name="site_logo" class="form-control" accept="image/*">
-                    <?php if (!empty($settings['site_logo'])): ?>
-                        <img src="../<?php echo htmlspecialchars($settings['site_logo']); ?>" alt="Logo" class="img-fluid mt-2" style="max-height: 90px;">
-                    <?php endif; ?>
+                        <?php if (!empty($settings['site_logo'])): ?>
+                            <img src="<?php echo htmlspecialchars(base_url($settings['site_logo'])); ?>" alt="Logo" class="img-fluid mt-2" style="max-height: 90px;">
+                        <?php endif; ?>
                 </div>
                 <div class="col-12 text-end">
                     <button class="btn btn-primary btn-neumorphic" type="submit">Guardar personalización</button>

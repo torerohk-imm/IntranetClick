@@ -5,7 +5,7 @@ use App\Auth;
 $conn = Database::connection();
 $canManage = Auth::canManageContent();
 $user = Auth::user();
-$uploadDir = realpath(__DIR__ . '/../storage/uploads/documents');
+$uploadDir = upload_dir('documents');
 
 function syncFolderPermissions($folderId, $roles, $emails, $conn)
 {
@@ -65,7 +65,7 @@ if ($canManage && is_post()) {
                 $stmt->execute([
                     'folder_id' => $folderId,
                     'name' => $filename,
-                    'file_path' => 'storage/uploads/documents/' . $safeName,
+                    'file_path' => 'uploads/documents/' . $safeName,
                     'uploaded_by' => $user['id'],
                 ]);
                 $message = 'Archivo cargado correctamente.';
@@ -86,10 +86,7 @@ if ($canManage && isset($_GET['action'], $_GET['id']) && $_GET['action'] === 'de
     $stmt = $conn->prepare('SELECT file_path FROM documents WHERE id = :id');
     $stmt->execute(['id' => $_GET['id']]);
     if ($row = $stmt->fetch()) {
-        $file = __DIR__ . '/../' . $row['file_path'];
-        if (file_exists($file)) {
-            unlink($file);
-        }
+        delete_public_file($row['file_path']);
     }
     $stmt = $conn->prepare('DELETE FROM documents WHERE id = :id');
     $stmt->execute(['id' => $_GET['id']]);
@@ -290,12 +287,12 @@ foreach ($folders as $folder) {
                             <?php foreach ($currentDocuments as $document): ?>
                                 <tr>
                                     <td>
-                                        <a href="../<?php echo htmlspecialchars($document['file_path']); ?>" download><?php echo htmlspecialchars($document['name']); ?></a>
+                                        <a href="<?php echo htmlspecialchars(base_url($document['file_path'])); ?>" download><?php echo htmlspecialchars($document['name']); ?></a>
                                     </td>
                                     <td><?php echo format_datetime($document['created_at']); ?></td>
                                     <td><?php echo htmlspecialchars($document['uploader'] ?? 'Sistema'); ?></td>
                                     <td class="text-end">
-                                        <a href="../<?php echo htmlspecialchars($document['file_path']); ?>" class="btn btn-sm btn-outline-primary" download>Descargar</a>
+                                        <a href="<?php echo htmlspecialchars(base_url($document['file_path'])); ?>" class="btn btn-sm btn-outline-primary" download>Descargar</a>
                                         <?php if ($canManage): ?>
                                             <a href="?module=documents&action=delete_document&id=<?php echo $document['id']; ?>&token=<?php echo csrf_token(); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar archivo?');">Eliminar</a>
                                         <?php endif; ?>

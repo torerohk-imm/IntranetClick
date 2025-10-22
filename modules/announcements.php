@@ -4,7 +4,7 @@ use App\Auth;
 
 $conn = Database::connection();
 $canManage = Auth::canManageContent();
-$uploadDir = realpath(__DIR__ . '/../storage/uploads/announcements');
+$uploadDir = upload_dir('announcements');
 
 if ($canManage && is_post()) {
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
@@ -22,7 +22,7 @@ if ($canManage && is_post()) {
             $filename = uniqid('announcement_') . '.' . $allowed[$type];
             $destination = $uploadDir . DIRECTORY_SEPARATOR . $filename;
             if (move_uploaded_file($_FILES['image']['tmp_name'], $destination)) {
-                $imagePath = 'storage/uploads/announcements/' . $filename;
+                $imagePath = 'uploads/announcements/' . $filename;
             }
         }
     }
@@ -59,10 +59,7 @@ if ($canManage && isset($_GET['action'], $_GET['id']) && verify_csrf($_GET['toke
         $stmt->execute(['id' => $_GET['id']]);
         $row = $stmt->fetch();
         if ($row && $row['image_path']) {
-            $file = __DIR__ . '/../' . $row['image_path'];
-            if (file_exists($file)) {
-                unlink($file);
-            }
+            delete_public_file($row['image_path']);
         }
         $stmt = $conn->prepare('DELETE FROM announcements WHERE id = :id');
         $stmt->execute(['id' => $_GET['id']]);
@@ -105,7 +102,7 @@ $announcements = $conn->query('SELECT announcements.*, users.name AS author FROM
                         <label class="form-label">Imagen (opcional)</label>
                         <input type="file" name="image" class="form-control" accept="image/*">
                         <?php if (!empty($editing['image_path'])): ?>
-                            <img src="../<?php echo htmlspecialchars($editing['image_path']); ?>" alt="Previsualización" class="img-fluid rounded mt-2">
+                            <img src="<?php echo htmlspecialchars(base_url($editing['image_path'])); ?>" alt="Previsualización" class="img-fluid rounded mt-2">
                         <?php endif; ?>
                     </div>
                     <button class="btn btn-primary btn-neumorphic" type="submit"><?php echo isset($editing) ? 'Actualizar' : 'Publicar'; ?></button>
@@ -137,7 +134,7 @@ $announcements = $conn->query('SELECT announcements.*, users.name AS author FROM
                             <p><?php echo nl2br($item['content']); ?></p>
                         </div>
                         <?php if (!empty($item['image_path'])): ?>
-                            <img src="../<?php echo htmlspecialchars($item['image_path']); ?>" alt="Imagen del anuncio" class="img-fluid rounded mt-2">
+                            <img src="<?php echo htmlspecialchars(base_url($item['image_path'])); ?>" alt="Imagen del anuncio" class="img-fluid rounded mt-2">
                         <?php endif; ?>
                     </article>
                 <?php endforeach; ?>
