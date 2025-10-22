@@ -6,6 +6,7 @@ $default = [
     'database' => 'intranet',
     'username' => 'root',
     'password' => '',
+    'socket' => null,
     'charset' => 'utf8mb4',
     'collation' => 'utf8mb4_unicode_ci',
 ];

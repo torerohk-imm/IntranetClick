@@ -57,10 +57,14 @@ Intranet Corporativa modular desarrollada con PHP nativo siguiendo una arquitect
        'database' => 'intranet',
        'username' => 'root',
        'password' => 'secret',
+       // Descomenta la siguiente línea si tu MySQL usa autenticación por socket (Debian/Ubuntu)
+       // 'socket' => '/var/run/mysqld/mysqld.sock',
    ];
    ```
 
    > Si no creas el archivo, se usarán los valores por defecto definidos en `config/database.php`.
+
+   Si recibes `Access denied for user 'root'@'localhost'` con la contraseña correcta, es probable que tu servidor MySQL tenga habilitado el plugin `auth_socket`. En ese caso habilita la opción `socket` (o especifica un usuario diferente) para que la conexión se realice mediante el archivo UNIX y sin contraseña.
 
 4. **Configurar Apache**
 
