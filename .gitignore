@@ -1,3 +1,4 @@
+config/database.local.php
 .env
 storage/uploads/announcements/*
 !storage/uploads/announcements/.gitkeep

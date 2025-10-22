@@ -41,23 +41,26 @@ Intranet Corporativa modular desarrollada con PHP nativo siguiendo una arquitect
    - Usuario: `admin@example.com`
    - Contraseña: `Admin123!`
 
-3. **Configurar variables de entorno**
+3. **Configurar la conexión a la base de datos**
 
-   Copia el archivo de ejemplo y ajusta tus credenciales:
+   Copia el archivo de ejemplo y ajusta tus credenciales locales:
    ```bash
-   cp .env.example .env
+   cp config/database.local.php.example config/database.local.php
    ```
 
-   Edita `.env` con los datos de tu servidor MySQL:
-   ```ini
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=intranet
-   DB_USERNAME=root
-   DB_PASSWORD=secret
+   Edita `config/database.local.php` definiendo las claves que necesites sobrescribir:
+   ```php
+   <?php
+   return [
+       'host' => '127.0.0.1',
+       'port' => '3306',
+       'database' => 'intranet',
+       'username' => 'root',
+       'password' => 'secret',
+   ];
    ```
 
-   > Las variables se leen desde `config/database.php`. También puedes exportarlas directamente en Apache o en el entorno del sistema.
+   > Si no creas el archivo, se usarán los valores por defecto definidos en `config/database.php`.
 
 4. **Configurar Apache**
 
