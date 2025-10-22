@@ -1,0 +1,159 @@
+:root {
+    --primary: #4f46e5;
+    --secondary: #0ea5e9;
+    --background: #e0e5ec;
+    --card-bg: #f1f5f9;
+    --shadow-light: rgba(255, 255, 255, 0.7);
+    --shadow-dark: rgba(163, 177, 198, 0.6);
+    --radius: 18px;
+    --text-color: #1f2937;
+}
+
+body {
+    background: var(--background);
+    color: var(--text-color);
+    font-family: 'Inter', Arial, sans-serif;
+    min-height: 100vh;
+}
+
+.navbar, .card, .module-card {
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+    border: none;
+}
+
+.module-card {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.btn-neumorphic {
+    border-radius: var(--radius);
+    border: none;
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.btn-neumorphic:hover {
+    transform: translateY(-2px);
+    box-shadow: 2px 2px 4px var(--shadow-dark), -2px -2px 4px var(--shadow-light);
+}
+
+input.form-control, select.form-select, textarea.form-control {
+    border-radius: var(--radius);
+    border: none;
+    box-shadow: inset 3px 3px 6px var(--shadow-dark), inset -3px -3px 6px var(--shadow-light);
+    background: var(--card-bg);
+}
+
+.table-neumorphic {
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 9px 9px 16px var(--shadow-dark), -9px -9px 16px var(--shadow-light);
+}
+
+.table-neumorphic thead {
+    background: var(--primary);
+    color: #fff;
+}
+
+.quick-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+}
+
+.quick-link-item {
+    padding: 1.25rem;
+    text-align: center;
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+    transition: transform .2s ease;
+}
+
+.quick-link-item:hover {
+    transform: translateY(-3px);
+}
+
+.folder-tree {
+    list-style: none;
+    padding-left: 1rem;
+}
+
+.folder-tree li {
+    margin: 0.5rem 0;
+}
+
+.badge-role {
+    border-radius: var(--radius);
+    padding: 0.25rem 0.75rem;
+    background: var(--secondary);
+    color: #fff;
+}
+
+.dashboard-widget {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.dashboard-widget h5 {
+    font-weight: 600;
+}
+
+.iframe-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.iframe-grid.grid-2 {
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.iframe-grid.grid-3 {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.iframe-grid.grid-1 {
+    grid-template-columns: 1fr;
+}
+
+.organigram-node {
+    border-radius: var(--radius);
+    padding: 1rem;
+    background: var(--card-bg);
+    box-shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+    text-align: center;
+    min-width: 220px;
+}
+
+.organigram-children {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.organigram-connector {
+    height: 30px;
+    border-left: 2px solid var(--secondary);
+    margin: 0 auto;
+}
+
+.organigram-photo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.5rem;
+    box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+}
+
+@media (max-width: 768px) {
+    .organigram-children {
+        flex-direction: column;
+    }
+}
