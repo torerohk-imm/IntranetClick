@@ -95,15 +95,29 @@ CREATE TABLE org_members (
     FOREIGN KEY (manager_id) REFERENCES org_members(id) ON DELETE SET NULL
 );
 
+CREATE TABLE quick_link_categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    created_by INT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
 CREATE TABLE quick_links (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(150) NOT NULL,
     url VARCHAR(255) NOT NULL,
     target ENUM('_self', '_blank') DEFAULT '_self',
     icon VARCHAR(120) NULL,
+    category_id INT NULL,
+    is_personal TINYINT(1) NOT NULL DEFAULT 0,
+    owner_id INT NULL,
     created_by INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES quick_link_categories(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 

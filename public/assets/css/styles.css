@@ -64,6 +64,121 @@ input.form-control, select.form-select, textarea.form-control {
     gap: 1rem;
 }
 
+.module-top-nav {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding: 0.25rem 0;
+}
+
+.module-top-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1.1rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--text-color);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.module-top-nav-link.active {
+    background: var(--primary);
+    color: #fff;
+}
+
+.module-top-nav-link:hover {
+    background: rgba(79, 70, 229, 0.18);
+    color: var(--text-color);
+}
+
+.quick-links-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.quick-link-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: 4px 4px 8px var(--shadow-dark), -4px -4px 8px var(--shadow-light);
+}
+
+.quick-link-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.quick-link-icon {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+.quick-link-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.quick-link-title {
+    font-weight: 600;
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.quick-link-title:hover {
+    text-decoration: underline;
+}
+
+.quick-link-url {
+    font-size: 0.85rem;
+    color: #64748b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: clamp(160px, 40vw, 420px);
+}
+
+.quick-link-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.field-suggested {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25);
+}
+
+.organigram-scroll {
+    overflow-x: auto;
+    padding-bottom: 1rem;
+}
+
+.organigram-root {
+    display: inline-flex;
+    justify-content: center;
+    gap: 1.5rem;
+    min-width: 100%;
+    padding-bottom: 0.5rem;
+}
+
+.organigram-branch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
 .quick-link-item {
     padding: 1.25rem;
     text-align: center;
@@ -135,6 +250,7 @@ input.form-control, select.form-select, textarea.form-control {
     justify-content: center;
     gap: 1rem;
     margin-top: 1rem;
+    flex-wrap: nowrap;
 }
 
 .organigram-connector {
@@ -150,6 +266,45 @@ input.form-control, select.form-select, textarea.form-control {
     object-fit: cover;
     margin-bottom: 0.5rem;
     box-shadow: 2px 2px 5px var(--shadow-dark), -2px -2px 5px var(--shadow-light);
+}
+
+.organigram-children .organigram-node {
+    min-width: 200px;
+}
+
+.organigram-children .organigram-children .organigram-node {
+    min-width: 180px;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 992px) {
+    .quick-link-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .quick-link-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .quick-link-url {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    .organigram-root {
+        justify-content: flex-start;
+    }
+
+    .organigram-children {
+        gap: 0.75rem;
+    }
+
+    .organigram-children .organigram-node {
+        min-width: 160px;
+    }
 }
 
 .btn-profile {

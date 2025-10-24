@@ -4,8 +4,6 @@ use App\Auth;
 
 $conn = Database::connection();
 $canManage = Auth::canManageContent();
-$uploadDir = upload_dir('announcements');
-
 if ($canManage && is_post()) {
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
         die('Token CSRF inválido.');
@@ -13,24 +11,20 @@ if ($canManage && is_post()) {
     $id = $_POST['id'] ?? null;
     $title = trim($_POST['title'] ?? '');
     $content = strip_tags(trim($_POST['content'] ?? ''), '<strong><b><em><u><br><br/><p>');
-    $imagePath = null;
-
-    if (!empty($_FILES['image']['name'])) {
-        $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif'];
-        $type = mime_content_type($_FILES['image']['tmp_name']);
-        if (isset($allowed[$type])) {
-            $filename = uniqid('announcement_') . '.' . $allowed[$type];
-            $destination = $uploadDir . DIRECTORY_SEPARATOR . $filename;
-            if (move_uploaded_file($_FILES['image']['tmp_name'], $destination)) {
-                $imagePath = 'uploads/announcements/' . $filename;
-            }
-        }
+    [$imagePath, $uploadError] = upload_image($_FILES['image'] ?? [], 'announcements', 'announcement');
+    if ($uploadError) {
+        $error = $uploadError;
     }
 
-    if ($title && $content) {
+    if (empty($error) && $title && $content) {
         if ($id) {
             $payload = ['title' => $title, 'content' => $content, 'id' => $id];
             if ($imagePath) {
+                $stmt = $conn->prepare('SELECT image_path FROM announcements WHERE id = :id');
+                $stmt->execute(['id' => $id]);
+                if ($current = $stmt->fetch()) {
+                    delete_public_file($current['image_path']);
+                }
                 $payload['image_path'] = $imagePath;
                 $stmt = $conn->prepare('UPDATE announcements SET title = :title, content = :content, image_path = :image_path WHERE id = :id');
             } else {
@@ -77,7 +71,9 @@ $announcements = $conn->query('SELECT announcements.*, users.name AS author FROM
     <div class="col-12 col-lg-4">
         <div class="module-card">
             <h2 class="h4 mb-3">Tablón de anuncios</h2>
-            <p class="text-muted">Comparte novedades, reconocimientos y actualizaciones de interés.</p>
+            <?php if ($canManage): ?>
+                <p class="text-muted">Comparte novedades, reconocimientos y actualizaciones de interés.</p>
+            <?php endif; ?>
             <?php if (!empty($message)): ?>
                 <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
             <?php endif; ?>

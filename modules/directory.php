@@ -77,14 +77,17 @@ if ($search) {
     $stmt->execute(['search' => "%$search%"]);
     $contacts = $stmt->fetchAll();
 } else {
-    $contacts = $conn->query('SELECT * FROM contacts ORDER BY name ASC')->fetchAll();
+$contacts = $conn->query('SELECT * FROM contacts ORDER BY name ASC')->fetchAll();
+$orgDirectoryData = $conn->query('SELECT name, job_title, email FROM org_members ORDER BY name ASC')->fetchAll();
 }
 ?>
 <div class="row g-4">
     <div class="col-12 col-xl-4">
         <div class="module-card">
             <h2 class="h4 mb-3">Directorio corporativo</h2>
-            <p class="text-muted">Encuentra rápidamente la información de contacto del personal.</p>
+            <?php if ($canManage): ?>
+                <p class="text-muted">Encuentra rápidamente la información de contacto del personal.</p>
+            <?php endif; ?>
             <?php if (!empty($message)): ?>
                 <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
             <?php endif; ?>
@@ -98,7 +101,17 @@ if ($search) {
                     <input type="hidden" name="id" value="<?php echo $editing['id'] ?? ''; ?>">
                     <div>
                         <label class="form-label">Nombre</label>
-                        <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($editing['name'] ?? ''); ?>" required>
+                        <input type="text" name="name" id="directory-name" class="form-control" value="<?php echo htmlspecialchars($editing['name'] ?? ''); ?>" list="directory-org-members" autocomplete="off" required>
+                        <?php if (!empty($orgDirectoryData)): ?>
+                            <datalist id="directory-org-members">
+                                <?php foreach ($orgDirectoryData as $orgMember): ?>
+                                    <?php if (!empty($orgMember['name'])): ?>
+                                        <option value="<?php echo htmlspecialchars($orgMember['name']); ?>"></option>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </datalist>
+                        <?php endif; ?>
+                        <div class="form-text" id="directory-suggestion"></div>
                     </div>
                     <div>
                         <label class="form-label">Puesto</label>
@@ -176,15 +189,81 @@ if ($search) {
                                 </td>
                                 <?php endif; ?>
                             </tr>
-                        <?php endforeach; ?>
-                        <?php if (empty($contacts)): ?>
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-4">No se encontraron registros.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+<?php endforeach; ?>
+            <?php if (empty($contacts)): ?>
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No se encontraron registros.</td>
+                </tr>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
         </div>
     </div>
 </div>
+<?php if ($canManage && !empty($orgDirectoryData)): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const nameInput = document.getElementById('directory-name');
+    if (!nameInput) {
+        return;
+    }
+    const jobInput = document.querySelector('input[name="job_title"]');
+    const emailInput = document.querySelector('input[name="email"]');
+    const suggestionBox = document.getElementById('directory-suggestion');
+    const members = <?php echo json_encode($orgDirectoryData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+
+    const clearHighlight = () => {
+        [jobInput, emailInput].forEach(function (input) {
+            if (input) {
+                input.classList.remove('field-suggested');
+            }
+        });
+    };
+
+    const applyHighlight = () => {
+        [jobInput, emailInput].forEach(function (input) {
+            if (input && input.value) {
+                input.classList.add('field-suggested');
+            }
+        });
+    };
+
+    nameInput.addEventListener('input', function () {
+        const lookup = this.value.trim().toLowerCase();
+        const match = members.find(function (member) {
+            return (member.name || '').toLowerCase() === lookup;
+        });
+
+        if (match) {
+            if (jobInput && !jobInput.value) {
+                jobInput.value = match.job_title || '';
+            }
+            if (emailInput && !emailInput.value) {
+                emailInput.value = match.email || '';
+            }
+            if (suggestionBox) {
+                suggestionBox.textContent = 'Datos sugeridos desde el organigrama. Puedes ajustarlos antes de guardar.';
+                suggestionBox.classList.add('text-success');
+            }
+            applyHighlight();
+        } else {
+            if (suggestionBox) {
+                suggestionBox.textContent = '';
+                suggestionBox.classList.remove('text-success');
+            }
+            clearHighlight();
+        }
+    });
+
+    [jobInput, emailInput].forEach(function (input) {
+        if (!input) {
+            return;
+        }
+        input.addEventListener('input', function () {
+            input.classList.remove('field-suggested');
+        });
+    });
+});
+</script>
+<?php endif; ?>

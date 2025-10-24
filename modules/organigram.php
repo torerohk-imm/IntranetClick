@@ -4,8 +4,6 @@ use App\Auth;
 
 $conn = Database::connection();
 $canManage = Auth::canManageContent();
-$uploadDir = upload_dir('avatars');
-
 if ($canManage && is_post()) {
     if (!verify_csrf($_POST['csrf_token'] ?? '')) {
         die('Token CSRF inválido.');
@@ -27,24 +25,16 @@ if ($canManage && is_post()) {
             'unit_id' => $_POST['unit_id'] ?: null,
             'manager_id' => $_POST['manager_id'] ?: null,
         ];
-        $photo = null;
-        if (!empty($_FILES['photo']['name'])) {
-            $allowed = ['image/jpeg' => 'jpg', 'image/png' => 'png'];
-            $type = mime_content_type($_FILES['photo']['tmp_name']);
-            if (isset($allowed[$type])) {
-                $filename = uniqid('avatar_') . '.' . $allowed[$type];
-                $destination = $uploadDir . DIRECTORY_SEPARATOR . $filename;
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], $destination)) {
-                    $photo = 'uploads/avatars/' . $filename;
-                }
-            }
+        [$photo, $photoError] = upload_image($_FILES['photo'] ?? [], 'avatars', 'avatar');
+        if ($photoError) {
+            $error = $photoError;
         }
-        if ($payload['name']) {
+        if ($payload['name'] && empty($error)) {
             $stmt = $conn->prepare('INSERT INTO org_members (name, job_title, email, unit_id, manager_id, photo_path) VALUES (:name, :job_title, :email, :unit_id, :manager_id, :photo_path)');
             $stmt->execute($payload + ['photo_path' => $photo]);
             $message = 'Colaborador agregado.';
-        } else {
-            $error = 'El nombre del colaborador es obligatorio.';
+        } elseif (!$payload['name']) {
+            $error = $error ?? 'El nombre del colaborador es obligatorio.';
         }
     }
 }
@@ -76,7 +66,7 @@ function renderTree($membersByManager, $managerId = 'root', $membersLookup = [])
     }
     echo '<div class="organigram-children">';
     foreach ($membersByManager[$managerId] as $member) {
-        echo '<div>'; 
+        echo '<div class="organigram-branch">';
         echo '<div class="organigram-node">';
         if (!empty($member['photo_path'])) {
             echo '<img src="' . htmlspecialchars(base_url($member['photo_path'])) . '" class="organigram-photo" alt="Foto">';
@@ -99,7 +89,9 @@ $topMembers = $membersByManager['root'] ?? [];
     <div class="col-12 col-xl-4">
         <div class="module-card">
             <h2 class="h4 mb-3">Organigrama</h2>
-            <p class="text-muted">Define las jerarquías, responsables y equipos por departamento.</p>
+            <?php if ($canManage): ?>
+                <p class="text-muted">Define las jerarquías, responsables y equipos por departamento.</p>
+            <?php endif; ?>
             <?php if (!empty($message)): ?>
                 <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
             <?php endif; ?>
@@ -174,27 +166,29 @@ $topMembers = $membersByManager['root'] ?? [];
         <div class="module-card">
             <h5 class="mb-4">Estructura organizacional</h5>
             <?php if (!empty($topMembers)): ?>
-                <div class="d-flex justify-content-center">
-                    <?php foreach ($topMembers as $rootMember): ?>
-                        <div class="text-center">
-                            <div class="organigram-node">
-                                <?php if (!empty($rootMember['photo_path'])): ?>
-                                    <img src="<?php echo htmlspecialchars(base_url($rootMember['photo_path'])); ?>" class="organigram-photo" alt="Foto">
-                                <?php endif; ?>
-                                <h5 class="mb-1"><?php echo htmlspecialchars($rootMember['name']); ?></h5>
-                                <p class="text-muted mb-1"><?php echo htmlspecialchars($rootMember['job_title']); ?></p>
-                                <?php if (!empty($rootMember['email'])): ?>
-                                    <a href="mailto:<?php echo htmlspecialchars($rootMember['email']); ?>" class="small"><?php echo htmlspecialchars($rootMember['email']); ?></a>
-                                <?php endif; ?>
-                                <?php if ($canManage): ?>
-                                    <div class="mt-2">
-                                        <a href="?module=organigram&action=delete_member&id=<?php echo $rootMember['id']; ?>&token=<?php echo csrf_token(); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar colaborador?');">Eliminar</a>
-                                    </div>
-                                <?php endif; ?>
+                <div class="organigram-scroll">
+                    <div class="organigram-root">
+                        <?php foreach ($topMembers as $rootMember): ?>
+                            <div class="organigram-branch text-center">
+                                <div class="organigram-node">
+                                    <?php if (!empty($rootMember['photo_path'])): ?>
+                                        <img src="<?php echo htmlspecialchars(base_url($rootMember['photo_path'])); ?>" class="organigram-photo" alt="Foto">
+                                    <?php endif; ?>
+                                    <h5 class="mb-1"><?php echo htmlspecialchars($rootMember['name']); ?></h5>
+                                    <p class="text-muted mb-1"><?php echo htmlspecialchars($rootMember['job_title']); ?></p>
+                                    <?php if (!empty($rootMember['email'])): ?>
+                                        <a href="mailto:<?php echo htmlspecialchars($rootMember['email']); ?>" class="small"><?php echo htmlspecialchars($rootMember['email']); ?></a>
+                                    <?php endif; ?>
+                                    <?php if ($canManage): ?>
+                                        <div class="mt-2">
+                                            <a href="?module=organigram&action=delete_member&id=<?php echo $rootMember['id']; ?>&token=<?php echo csrf_token(); ?>" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar colaborador?');">Eliminar</a>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php renderTree($membersByManager, $rootMember['id']); ?>
                             </div>
-                            <?php renderTree($membersByManager, $rootMember['id']); ?>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             <?php else: ?>
                 <div class="text-center text-muted py-5">Agrega colaboradores para visualizar el organigrama.</div>

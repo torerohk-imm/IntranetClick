@@ -118,6 +118,75 @@ function upload_url(string $path = ''): string
     return $base . '/' . ltrim($path, '/');
 }
 
+function upload_image(array $file, string $subdir, string $prefix = 'img', array $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']): array
+{
+    if (empty($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE || empty($file['name'])) {
+        return [null, null];
+    }
+
+    $errorCode = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+    if ($errorCode !== UPLOAD_ERR_OK) {
+        return [null, 'No se pudo subir la imagen (código de error ' . $errorCode . ').'];
+    }
+
+    $tmpPath = $file['tmp_name'] ?? '';
+    if (!$tmpPath || !is_uploaded_file($tmpPath)) {
+        return [null, 'El archivo recibido no es válido.'];
+    }
+
+    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if ($extension === 'jpeg') {
+        $extension = 'jpg';
+    }
+
+    if (!in_array($extension, $allowedExtensions, true)) {
+        return [null, 'Formato de imagen no permitido.'];
+    }
+
+    $allowedMime = [
+        'jpg' => ['image/jpeg', 'image/pjpeg'],
+        'png' => ['image/png'],
+        'gif' => ['image/gif'],
+        'webp' => ['image/webp'],
+        'svg' => ['image/svg+xml'],
+    ];
+
+    $mime = null;
+    if (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        if ($finfo) {
+            $mime = finfo_file($finfo, $tmpPath) ?: null;
+            finfo_close($finfo);
+        }
+    }
+
+    if (!$mime && function_exists('mime_content_type')) {
+        $mime = @mime_content_type($tmpPath) ?: null;
+    }
+
+    if (!$mime && !empty($file['type'])) {
+        $mime = $file['type'];
+    }
+
+    if ($mime && isset($allowedMime[$extension]) && !in_array($mime, $allowedMime[$extension], true)) {
+        return [null, 'El archivo debe ser una imagen válida.'];
+    }
+
+    $filename = $prefix . '_' . uniqid('', true) . '.' . $extension;
+    $destination = upload_dir($subdir) . DIRECTORY_SEPARATOR . $filename;
+
+    if (!move_uploaded_file($tmpPath, $destination)) {
+        return [null, 'No fue posible guardar la imagen en el servidor.'];
+    }
+
+    @chmod($destination, 0644);
+
+    $relative = trim($subdir, '/\\');
+    $relative = $relative !== '' ? 'uploads/' . $relative . '/' . $filename : 'uploads/' . $filename;
+
+    return [$relative, null];
+}
+
 function delete_public_file(?string $relativePath): void
 {
     if (empty($relativePath)) {

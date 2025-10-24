@@ -99,7 +99,9 @@ $today = date('Y-m-d');
     <div class="col-12 col-xl-4">
         <div class="module-card">
             <h2 class="h4 mb-3">Calendario de eventos</h2>
-            <p class="text-muted">Visualiza los eventos importantes de la organización.</p>
+            <?php if ($canManage): ?>
+                <p class="text-muted">Visualiza los eventos importantes de la organización.</p>
+            <?php endif; ?>
             <?php if (!empty($message)): ?>
                 <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
             <?php endif; ?>

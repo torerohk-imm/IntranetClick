@@ -10,7 +10,9 @@ $settings = get_user_dashboard_settings($user['id']);
 $events = $conn->query("SELECT id, title, date, description FROM events WHERE date >= CURDATE() ORDER BY date ASC LIMIT 5")->fetchAll();
 $announcements = $conn->query("SELECT id, title, created_at FROM announcements ORDER BY created_at DESC LIMIT 5")->fetchAll();
 $documents = $conn->query("SELECT documents.id, documents.name, folders.name AS folder_name, documents.updated_at FROM documents JOIN folders ON folders.id = documents.folder_id ORDER BY documents.updated_at DESC LIMIT 5")->fetchAll();
-$quickLinks = $conn->query("SELECT id, title, url, target FROM quick_links ORDER BY created_at DESC LIMIT 6")->fetchAll();
+$quickLinksStmt = $conn->prepare('SELECT id, title, url, target FROM quick_links WHERE is_personal = 0 OR (is_personal = 1 AND owner_id = :owner) ORDER BY is_personal ASC, created_at DESC LIMIT 6');
+$quickLinksStmt->execute(['owner' => $user['id']]);
+$quickLinks = $quickLinksStmt->fetchAll();
 
 $layoutClass = $settings['layout'] === 'list' ? 'col-12' : 'col-md-6 col-xl-3';
 ?>

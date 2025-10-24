@@ -52,7 +52,9 @@ $gridClass = !empty($sites) ? ($sites[0]['layout'] ?? 'grid-2') : 'grid-2';
     <div class="col-12 col-lg-4">
         <div class="module-card">
             <h2 class="h4 mb-3">Sitios embebidos</h2>
-            <p class="text-muted">Incorpora dashboards externos, métricas o contenidos web dentro de la intranet.</p>
+            <?php if ($canManage): ?>
+                <p class="text-muted">Incorpora dashboards externos, métricas o contenidos web dentro de la intranet.</p>
+            <?php endif; ?>
             <?php if (!empty($message)): ?>
                 <div class="alert alert-success"><?php echo htmlspecialchars($message); ?></div>
             <?php endif; ?>
