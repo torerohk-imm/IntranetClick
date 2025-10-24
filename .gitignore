@@ -1,0 +1,10 @@
+config/database.local.php
+.env
+public/uploads/announcements/*
+!public/uploads/announcements/.gitkeep
+public/uploads/documents/*
+!public/uploads/documents/.gitkeep
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
+public/uploads/branding/*
+!public/uploads/branding/.gitkeep
